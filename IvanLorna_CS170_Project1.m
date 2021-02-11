@@ -19,9 +19,9 @@ solution = [
 %starting states can be input manually.
 %i make the assumption a solution exists for the input initial state
 problem = [
-    1,0,3,1;
-    4,2,5,1;
-    6,7,8,0]
+    4,1,3,3;
+    2,7,5,1;
+    0,6,8,0]
 
 
 %if the depth of the problem is known, 
@@ -44,8 +44,12 @@ QUEUEING_FUNCTION = 1
 %   node(:,:,SortOrder)
 %credit: https://www.mathworks.com/matlabcentral/answers/21201-sorting-3d-matrix-by-value-of-a-cell#answer_27937
 
+%if you know how deep the answer is, make it a parameter as to avoid longer
+%runtime than neccessary, useful for testing
+max_depth = 0;
+
 %execute the general search function derived from given psuedocode
-answer = general_search(problem, solution, QUEUEING_FUNCTION)
+answer = general_search(problem, solution, QUEUEING_FUNCTION,max_depth)
 
 %test = [
 %    8,0,2,1;
@@ -53,16 +57,21 @@ answer = general_search(problem, solution, QUEUEING_FUNCTION)
 %    6,7,5,0]
 %MAKE_QUEUE(test,solution,QUEUEING_FUNCTION)
 %%
-function answer = general_search(problem,solution, QUEUEING_FUNCTION) %answer is the return value
+function answer = general_search(problem,solution, QUEUEING_FUNCTION,max_depth) %answer is the return value
     nodes = MAKE_QUEUE(problem,solution, QUEUEING_FUNCTION);%nodes is the queue of states that the algorithm will analyze
     answer = ones([3,4])*-1; %-1 value represents failure to find a solution
+    d = 0;
     while size(nodes,3) >= 1
         if nodes(:,1:3,1) == solution %solution check
             fprintf("solution found\n")
             answer = nodes(:,:,1);
             return;
         end
+        if ((d >= max_depth) & (max_depth ~= 0))
+            return;
+        end
         nodes = UPDATE_QUEUE(nodes,solution,QUEUEING_FUNCTION); %update queue
+        d = d+1;
     end
 end
 
@@ -136,7 +145,7 @@ function q = MISPLACED_TILE(q,solution)
                 end
             end
         end
-        q(3,4,i) = sum;
+        q(3,4,i) = sum+1;
         
     end
 
