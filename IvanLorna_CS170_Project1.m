@@ -19,9 +19,9 @@ solution = [
 %starting states can be input manually.
 %i make the assumption a solution exists for the input initial state
 problem = [
-    4,1,3,3;
-    2,7,5,1;
-    0,6,8,0]
+    2,3,5,3;
+    1,6,7,3;
+    4,8,0,0]
 
 
 %if the depth of the problem is known, 
@@ -125,7 +125,6 @@ function q = CALC_WEIGHTS(q,solution,QUEUEING_FUNCTION)
             q = MISPLACED_TILE(q,solution);
             
         case 2
-            %fprinf("A* with manhattan distance heuristic")
             q = MANHATTAN_DISTANCE(q,solution);
         
         otherwise %Uniform Cost Search is used if 0 or an undefined value
@@ -139,10 +138,10 @@ end
 function q = MANHATTAN_DISTANCE(q,solution)
     for i = 1:size(q,3)
         q(3,4,i) = 0;
-        for xs = 1:3
-            for ys = 1:3
-                for xp = 1:3
-                    for yp = 1:3
+        for ys = 1:3
+            for xs = 1:3
+                for yp = 1:3
+                    for xp = 1:3
                         if solution(ys,xs) == q(yp,xp,i)
                             q(3,4,i) = q(3,4,i) + abs(ys-yp) + abs(xs-xp);
                         end
@@ -174,7 +173,7 @@ function q = UPDATE_QUEUE(nodes, solution, QUEUEING_FUNCTION)
     q = MAKE_QUEUE(nodes(:,:,1),solution, QUEUEING_FUNCTION);
     %remove top node
     n_sz = size(nodes,3);
-    %nodes(:,:,1) %uncomment to have popped nodes printed for output
+    front_of_queue = nodes(:,:,1) %uncomment to have popped nodes printed for output
     nodes = nodes(:,:,2:n_sz);
     n_sz = n_sz-1;
     
