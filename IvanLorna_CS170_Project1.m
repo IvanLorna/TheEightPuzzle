@@ -33,7 +33,7 @@ problem = [
 % 0-- Uniform Cost search
 % 1-- A* with Misplaced Tile Heuristic
 % 2-- A* with Manhattan Distance Hueristic
-QUEUEING_FUNCTION = 1
+QUEUEING_FUNCTION = 2
 
 %nodes is a 3D array representing the queue of matrix states 
 %   nodes(:,:,1) = problem
@@ -62,7 +62,7 @@ function answer = general_search(problem,solution, QUEUEING_FUNCTION,max_depth) 
     answer = ones([3,4])*-1; %-1 value represents failure to find a solution
     d = 0;
     while size(nodes,3) >= 1
-        if nodes(:,1:3,1) == solution %solution check
+        if nodes(1:3,1:3,1) == solution %solution check
             fprintf("solution found\n")
             answer = nodes(:,:,1);
             return;
@@ -125,7 +125,8 @@ function q = CALC_WEIGHTS(q,solution,QUEUEING_FUNCTION)
             q = MISPLACED_TILE(q,solution);
             
         case 2
-            fprinf("A* with manhattan distance heuristic")
+            %fprinf("A* with manhattan distance heuristic")
+            q = MANHATTAN_DISTANCE(q,solution);
         
         otherwise %Uniform Cost Search is used if 0 or an undefined value
             for i = 1:size(q,3)
@@ -134,6 +135,23 @@ function q = CALC_WEIGHTS(q,solution,QUEUEING_FUNCTION)
     end
     return;
 end
+
+function q = MANHATTAN_DISTANCE(q,solution)
+    for i = 1:size(q,3)
+        q(3,4,i) = 0;
+        for xs = 1:3
+            for ys = 1:3
+                for xp = 1:3
+                    for yp = 1:3
+                        if solution(ys,xs) == q(yp,xp,i)
+                            q(3,4,i) = q(3,4,i) + abs(ys-yp) + abs(xs-xp);
+                        end
+                    end
+                end
+            end
+        end
+    end
+end 
 
 function q = MISPLACED_TILE(q,solution)
     for i = 1:size(q,3)
@@ -168,9 +186,9 @@ function q = UPDATE_QUEUE(nodes, solution, QUEUEING_FUNCTION)
     %sort nodes by least weight to greatest
     [~,SortOrder] = sort(nodes(3,4,:),3);
     q = nodes(:,:,SortOrder);
-    while q(3,4,1) == 0
-        q = q(:,:,2:size(q,3));
-    end
+    %while q(3,4,1) == 0
+    %    q = q(:,:,2:size(q,3));
+    %end
     %q is returned with new sorted nodes 
     return;
 end
