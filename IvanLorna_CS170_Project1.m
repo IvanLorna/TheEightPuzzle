@@ -18,11 +18,63 @@ solution = [
 %puzzle, because it may not be in the parity needed to reach the solution,
 %starting states can be input manually.
 %i make the assumption a solution exists for the input initial state
-problem = [
-    2,3,5,3;
-    1,6,7,3;
-    4,8,0,0]
-
+problems = [solution,[2;2;0]];
+problems(:,:,1) = [ %0 steps
+    1,2,3,2;
+    4,0,5,2;
+    6,7,8,0];
+problems(:,:,2) = [ %1 step
+    1,0,3,1;
+    4,2,5,2;
+    6,7,8,0];
+problems(:,:,3) = [ %2 step
+    1,3,0,1;
+    4,2,5,3;
+    6,7,8,0];
+problems(:,:,4) = [ %3 steps
+    1,3,5,2;
+    4,2,0,3;
+    6,7,8,0];
+problems(:,:,5) = [ %4 steps
+    1,3,5,3;
+    4,2,8,3;
+    6,7,0,0];
+problems(:,:,6) = [ %5 steps
+    1,3,5,3;
+    4,2,8,2;
+    6,0,7,0];
+problems(:,:,7) = [ %6 steps
+    1,3,5,3;
+    4,2,8,1;
+    0,6,7,0];
+problems(:,:,8) = [ %7 steps
+    1,3,5,2;
+    0,2,8,1;
+    4,6,7,0];
+problems(:,:,9) = [ %8 steps
+    1,3,5,2;
+    2,0,8,2;
+    4,6,7,0];
+problems(:,:,10) = [ %9 steps
+    1,0,5,1;
+    2,3,8,2;
+    4,6,7,0];
+problems(:,:,11) = [ %10 steps
+    1,5,0,1;
+    2,3,8,3;
+    4,6,7,0];
+problems(:,:,12) = [ %11 steps
+    1,5,8,2;
+    2,3,0,3;
+    4,6,7,0];
+problems(:,:,13) = [ %12 steps
+    1,5,8,3;
+    2,3,7,3;
+    4,6,0,0];
+problems(:,:,14) = [ %13 steps
+    1,5,8,3;
+    2,3,7,2;
+    4,0,6,0];
 
 %if the depth of the problem is known, 
 % we can use it for depth limitedearchs
@@ -33,7 +85,7 @@ problem = [
 % 0-- Uniform Cost search
 % 1-- A* with Misplaced Tile Heuristic
 % 2-- A* with Manhattan Distance Hueristic
-QUEUEING_FUNCTION = 2
+QUEUEING_FUNCTION = 2;
 
 %nodes is a 3D array representing the queue of matrix states 
 %   nodes(:,:,1) = problem
@@ -47,30 +99,98 @@ QUEUEING_FUNCTION = 2
 %if you know how deep the answer is, make it a parameter as to avoid longer
 %runtime than neccessary, useful for testing
 max_depth = 0;
-
+data = [0,0];
 %execute the general search function derived from given psuedocode
-answer = general_search(problem, solution, QUEUEING_FUNCTION,max_depth)
+colors = ['r-','g-','b-'];
+for qf = [3,1,2]
+    QUEUEING_FUNCTION = qf;
+    for i = 1:11%1:(size(problems,3)-2*(3-qf))
+        tic;
+        answer = general_search(problems(:,:,i), solution, QUEUEING_FUNCTION,max_depth);
+        data(i,:,qf) =[i,toc];
+    end
+    plot(data(:,1,qf),data(:,2,qf), colors(qf), 'LineWidth', 1, 'MarkerSize', 2);
+    hold on;
+end
+legend('Uniform Cost Search', 'A* with Misplaced Tile', 'A* with Manhattan Distance' )
+title("Figure 4: Line Plot of Runtime of Different Algorithms")
+xlabel('Complexity (in moves needed to solve)');
+ylabel('Time Taken to Solve (sec)')
+hold off;
+%%
+qf = 1
+plot(data(:,1,qf),data(:,2,qf), colors(qf), 'LineWidth', 1, 'MarkerSize', 2);
+hold on;
+qf = 2
+plot(data(:,1,qf),data(:,2,qf), colors(qf), 'LineWidth', 1, 'MarkerSize', 2);
+hold off;
 
-%test = [
-%    8,0,2,1;
-%    3,4,1,2;
-%    6,7,5,0]
-%MAKE_QUEUE(test,solution,QUEUEING_FUNCTION)
+plot(data(:,1,qf),data(:,2,qf), colors(qf), 'LineWidth', 1, 'MarkerSize', 2);
+hold on;
+%legend('A* with Manhattan Distance' )
+title("Figure 5: Line Plot of Runtime of A* with Manhattan Distance");
+xlabel('Complexity (in moves needed to solve)');
+ylabel('Time Taken to Solve (sec)');
+hold off;
+%%
+%simple problem
+simple_problem = [
+    1,3,5,2;
+    4,0,2,2;
+    6,7,8,0]
+answer = general_search(simple_problem, solution, 2,max_depth);
+%%
+%complex problem
+complex_problem = [
+    5,8,6,3;
+    3,7,4,2;
+    2,0,1,24]
+answer = general_search(complex_problem, solution, 2,max_depth);
 %%
 function answer = general_search(problem,solution, QUEUEING_FUNCTION,max_depth) %answer is the return value
     nodes = MAKE_QUEUE(problem,solution, QUEUEING_FUNCTION);%nodes is the queue of states that the algorithm will analyze
     answer = ones([3,4])*-1; %-1 value represents failure to find a solution
     d = 0;
+    max_q_size = 1;
+    nodes_expanded = 1;
+    depth = 0;
+    visited_s = 1;
+    visited = zeros([3,3,1]);
     while size(nodes,3) >= 1
         if nodes(1:3,1:3,1) == solution %solution check
-            fprintf("solution found\n")
+            front_of_queue = nodes(:,:,1)
+            fprintf("solution found\n");
+            fprintf( "max depth: %d\n", depth);
+            fprintf("nodes expanded: %d\n",nodes_expanded);
+            fprintf("max queue size: %d\n",max_q_size);
             answer = nodes(:,:,1);
             return;
         end
+        
+        if (visited_s > 1) & (size(nodes,3) > 1)
+            for i = 1:size(visited,3)
+                if (nodes(1:3,1:3,1) == visited(:,:,i))
+                    nodes = nodes(:,:,2:size(nodes,3));
+                end
+            end
+        end
+        
+        if depth < nodes(3,4,1)
+            depth = nodes(3,4,1);
+        end
+        if max_q_size < size(nodes,3)
+            max_q_size = size(nodes,3);
+        end
+        visited(:,:,visited_s) = nodes(1:3,1:3,1);
+        visited_s = visited_s + 1;
+        
         if ((d >= max_depth) & (max_depth ~= 0))
             return;
         end
         nodes = UPDATE_QUEUE(nodes,solution,QUEUEING_FUNCTION); %update queue
+        
+        %update stats
+        nodes_expanded = nodes_expanded + 1;        
         d = d+1;
     end
 end
@@ -174,6 +294,7 @@ function q = UPDATE_QUEUE(nodes, solution, QUEUEING_FUNCTION)
     %remove top node
     n_sz = size(nodes,3);
     front_of_queue = nodes(:,:,1) %uncomment to have popped nodes printed for output
+    
     nodes = nodes(:,:,2:n_sz);
     n_sz = n_sz-1;
     
